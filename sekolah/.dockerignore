@@ -1,0 +1,16 @@
+.DS_Store
+.git
+.gitignore
+.idea
+.vscode
+node_modules
+vendor
+writable/cache/*
+writable/debugbar/*
+writable/logs/*
+writable/session/*
+writable/uploads/*
+tests
+phpunit.xml*
+*.sql
+Tutorial Upload CPanel.pdf

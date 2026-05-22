@@ -1,0 +1,126 @@
+services:
+  db:
+    image: mariadb:10.4
+    container_name: muhammadiyah-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: sekolah
+      MARIADB_USER: muhammadiyah
+      MARIADB_PASSWORD: muhammadiyah
+    command:
+      - --sql-mode=NO_AUTO_VALUE_ON_ZERO
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/db/init/01-create-databases.sql:/docker-entrypoint-initdb.d/01-create-databases.sql:ro
+      - ./docker/db/init/02-import-sekolah.sh:/docker-entrypoint-initdb.d/02-import-sekolah.sh:ro
+      - ./docker/db/init/03-import-siakad.sh:/docker-entrypoint-initdb.d/03-import-siakad.sh:ro
+      - ./sekolah/sekolah.sql:/docker-dumps/sekolah.sql:ro
+      - ./siakad/DATABASE/wbsiakadv3.sql:/docker-dumps/wbsiakadv3.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - muhammadiyah
+
+  sekolah:
+    build:
+      context: ./docker/php-apache-ci4
+      dockerfile: Dockerfile
+    image: muhammadiyah/sekolah:php8.2
+    container_name: muhammadiyah-sekolah
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # CodeIgniter 4 env overrides (read by app/Config/Database.php via env())
+      CI_ENVIRONMENT: development
+      database.default.hostname: db
+      database.default.database: sekolah
+      database.default.username: muhammadiyah
+      database.default.password: muhammadiyah
+      database.default.DBDriver: MySQLi
+      database.default.port: "3306"
+    ports:
+      - "8081:80"
+    volumes:
+      - ./sekolah:/var/www/html
+    networks:
+      - muhammadiyah
+
+  siakad:
+    build:
+      context: ./docker/php-apache-siakad
+      dockerfile: Dockerfile
+    image: muhammadiyah/siakad:php7.4
+    container_name: muhammadiyah-siakad
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8082:80"
+    volumes:
+      - ./siakad:/var/www/html
+    networks:
+      - muhammadiyah
+
+  phpmyadmin:
+    image: phpmyadmin:5-apache
+    container_name: muhammadiyah-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: muhammadiyah
+      PMA_PASSWORD: muhammadiyah
+      UPLOAD_LIMIT: 256M
+    ports:
+      - "8083:80"
+    networks:
+      - muhammadiyah
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: muhammadiyah-portainer
+    restart: unless-stopped
+    ports:
+      - "9001:9000"
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - muhammadiyah
+
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: muhammadiyah-nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    networks:
+      - muhammadiyah
+
+networks:
+  muhammadiyah:
+    driver: bridge
+
+volumes:
+  db_data:
+  portainer_data:
+  npm_data:
+  npm_letsencrypt:

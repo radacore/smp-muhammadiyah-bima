@@ -1,0 +1,41 @@
+services:
+  sekolah:
+    build:
+      context: ./docker/php-apache-ci4
+      dockerfile: Dockerfile
+    image: smp-muhammadiyah-bima/sekolah:php8.2
+    container_name: mts_sekolah_muhammadiyah
+    restart: unless-stopped
+    environment:
+      CI_ENVIRONMENT: production
+      app.baseURL: ${SEKOLAH_BASE_URL:-http://localhost:8090/}
+      database.default.hostname: db
+      database.default.database: sekolah
+      database.default.username: muhammadiyah
+      database.default.password: muhammadiyah
+      database.default.DBDriver: MySQLi
+      database.default.port: "3306"
+    ports:
+      - "8090:80"
+    volumes:
+      - ./sekolah:/var/www/html
+    networks:
+      - mts_network
+
+  siakad:
+    build:
+      context: ./docker/php-apache-siakad
+      dockerfile: Dockerfile
+    image: smp-muhammadiyah-bima/siakad:php7.4
+    container_name: mts_siakad_muhammadiyah
+    restart: unless-stopped
+    ports:
+      - "8091:80"
+    volumes:
+      - ./siakad:/var/www/html
+    networks:
+      - mts_network
+
+networks:
+  mts_network:
+    external: true

@@ -1,0 +1,18 @@
+.DS_Store
+Thumbs.db
+
+# Runtime/log/cache
+sekolah/writable/cache/*
+sekolah/writable/debugbar/*
+sekolah/writable/logs/*
+sekolah/writable/session/*
+sekolah/writable/uploads/*
+!sekolah/writable/cache/index.html
+!sekolah/writable/debugbar/index.html
+!sekolah/writable/logs/index.html
+!sekolah/writable/session/index.html
+!sekolah/writable/uploads/index.html
+
+# Local editor
+.vscode/
+.idea/
