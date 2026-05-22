@@ -15,6 +15,25 @@ if ! docker ps --format '{{.Names}}' | grep -qx 'mysql_db'; then
   exit 1
 fi
 
+echo "Preparing sekolah environment..."
+SEKOLAH_BASE_URL="${SEKOLAH_BASE_URL:-http://localhost:8090/}"
+if [ -f sekolah/.env.production ]; then
+  cp sekolah/.env.production sekolah/.env
+fi
+python3 - <<PY
+from pathlib import Path
+p = Path('sekolah/.env')
+text = p.read_text()
+repls = {
+    'CI_ENVIRONMENT = development': 'CI_ENVIRONMENT = production',
+    "app.baseURL = 'http://localhost:8081/'": "app.baseURL = '${SEKOLAH_BASE_URL}'",
+    "app.baseURL = 'http://localhost:8090/'": "app.baseURL = '${SEKOLAH_BASE_URL}'",
+}
+for old, new in repls.items():
+    text = text.replace(old, new)
+p.write_text(text)
+PY
+
 echo "Preparing databases..."
 bash docker/db/init-vps/import-dumps.sh
 
@@ -23,7 +42,7 @@ docker compose -f docker-compose.vps.yml up -d --build
 
 echo ""
 echo "Deployment done."
-echo "Sekolah: http://YOUR_VPS_IP:8090"
+echo "Sekolah: ${SEKOLAH_BASE_URL}"
 echo "Siakad : http://YOUR_VPS_IP:8091"
 echo ""
 echo "If you use Nginx Proxy Manager, point domains to:"
