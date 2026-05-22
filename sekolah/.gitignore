@@ -11,7 +11,8 @@
 # Config file
 # app/Config/
 app/Config/Database.php
-app/Config/App.php
+# App.php must be versioned because the Docker/VPS deploy needs a safe baseURL default.
+# app/Config/App.php
 writable/
 writable/debugbar/
 writable/logs
