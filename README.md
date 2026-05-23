@@ -71,18 +71,22 @@ Karena itu file `docker-compose.vps.yml` tidak membuat MySQL/phpMyAdmin/Portaine
 cd /path/di/vps
 git clone https://github.com/radacore/smp-muhammadiyah-bima.git
 cd smp-muhammadiyah-bima
+cp .env.example .env
+# edit .env, set SEKOLAH_BASE_URL ke domain final (akhiri dengan "/")
 chmod +x vps-setup.sh docker/db/init-vps/import-dumps.sh
 ./vps-setup.sh
 ```
 
 Script `vps-setup.sh` akan:
 
-1. Memastikan network `mts_network` ada.
-2. Memastikan container MySQL existing `mysql_db` sedang running.
-3. Membuat database `sekolah` dan `wbsiakadv3`.
-4. Membuat user database `muhammadiyah` dengan password `muhammadiyah`.
-5. Meng-import `sekolah/sekolah.sql` dan `siakad/DATABASE/wbsiakadv3.sql`.
-6. Build dan start container sekolah + siakad.
+1. Membuat `.env` dari `.env.example` kalau belum ada, lalu membaca `SEKOLAH_BASE_URL` dari sana.
+2. Memastikan network `mts_network` ada.
+3. Memastikan container MySQL existing `mysql_db` sedang running.
+4. Membuat database `sekolah` dan `wbsiakadv3`.
+5. Membuat user database `muhammadiyah` dengan password `muhammadiyah`.
+6. Meng-import `sekolah/sekolah.sql` dan `siakad/DATABASE/wbsiakadv3.sql`.
+7. Menyalin `sekolah/.env.production` ke `sekolah/.env` dan mengisi `app.baseURL` dari `SEKOLAH_BASE_URL`.
+8. Build dan start container sekolah + siakad.
 
 Setelah selesai:
 
@@ -103,11 +107,11 @@ Untuk SIAKAD:
 - Forward Hostname/IP: `mts_siakad_muhammadiyah`
 - Forward Port: `80`
 
-Jika sudah pakai domain, ubah base URL sekolah agar asset dan link benar. Edit `docker-compose.vps.yml`:
+Jika sudah pakai domain, atur base URL sekolah agar asset dan link benar lewat `.env` di root repo:
 
-```yaml
-environment:
-  app.baseURL: https://domain-sekolah-anda.com/
+```bash
+# .env (di root repo VPS)
+SEKOLAH_BASE_URL=https://domain-sekolah-anda.com/
 ```
 
 Lalu restart:
@@ -115,6 +119,8 @@ Lalu restart:
 ```bash
 docker compose -f docker-compose.vps.yml up -d
 ```
+
+Kalau CSS/JS/gambar masih nge-load dari `http://localhost:8090/...`, artinya `SEKOLAH_BASE_URL` belum ke-set saat compose up. Jalankan ulang `./vps-setup.sh` (atau minimal `docker compose -f docker-compose.vps.yml up -d --force-recreate sekolah`) setelah `.env` benar.
 
 ## Perintah update di VPS setelah ada perubahan dari Git
 
